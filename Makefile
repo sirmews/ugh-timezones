@@ -18,7 +18,7 @@ dev:
 		echo "Dependencies not found. Installing..."; \
 		make install; \
 	fi
-	npx live-server --port=3000 --open=index.html
+	npx live-server --port=3000 --open=index.html --watch=index.html
 
 # Clean up dependencies
 clean:

@@ -4,19 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Timezone Slider</title>
-        <!-- Google Fonts for a clean look -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
-            rel="stylesheet"
-        />
 
-        <!-- Day.js for robust timezone handling -->
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/utc.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/timezone.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/advancedFormat.js"></script>
 
         <style>
             /* --- Basic Setup & Theming --- */
@@ -48,7 +36,6 @@
 
             body {
                 font-family:
-                    "Inter",
                     -apple-system,
                     BlinkMacSystemFont,
                     "Segoe UI",
@@ -238,10 +225,66 @@
         <datalist id="timezone-list"></datalist>
 
         <script>
-            // --- Initialize Day.js Plugins ---
-            dayjs.extend(dayjs_plugin_utc);
-            dayjs.extend(dayjs_plugin_timezone);
-            dayjs.extend(dayjs_plugin_advancedFormat);
+            // --- Native Timezone Utilities ---
+            const TimezoneUtils = {
+                // Get user's current timezone
+                getUserTimezone() {
+                    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                },
+
+                // Convert a date to a specific timezone and return formatted time
+                formatTimeInTimezone(date, timezone, options = {}) {
+                    const defaultOptions = {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                        timeZone: timezone
+                    };
+                    return new Intl.DateTimeFormat('en-US', { ...defaultOptions, ...options }).format(date);
+                },
+
+                // Get timezone offset string like "+05:00"
+                getTimezoneOffset(timezone) {
+                    const date = new Date();
+                    const formatter = new Intl.DateTimeFormat('sv-SE', {
+                        timeZone: timezone,
+                        timeZoneName: 'longOffset'
+                    });
+                    const parts = formatter.formatToParts(date);
+                    const offsetPart = parts.find(part => part.type === 'timeZoneName');
+                    return offsetPart ? offsetPart.value : '';
+                },
+
+                // Create a date object for a specific hour in a timezone
+                getDateAtHour(baseDate, hour, timezone) {
+                    const date = new Date(baseDate);
+                    // Set the hour in the target timezone
+                    const tempDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour);
+                    return tempDate;
+                },
+
+                // Check if two dates are the same day
+                isSameDay(date1, date2, timezone) {
+                    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: timezone });
+                    return fmt.format(date1) === fmt.format(date2);
+                },
+
+                // Check if date1 is after date2 (day-wise)
+                isAfterDay(date1, date2, timezone) {
+                    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: timezone });
+                    return fmt.format(date1) > fmt.format(date2);
+                },
+
+                // Get hour from date in specific timezone
+                getHourInTimezone(date, timezone) {
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        hour: 'numeric',
+                        hour12: false,
+                        timeZone: timezone
+                    });
+                    return parseInt(formatter.format(date));
+                }
+            };
 
             // --- DOM Elements ---
             const timelineContainer =
@@ -255,12 +298,12 @@
 
             // --- State Management ---
             const state = {
-                tzA: dayjs.tz.guess(),
+                tzA: TimezoneUtils.getUserTimezone(),
                 tzB: "America/New_York",
             };
 
-            function getEmojiForTime(timeObject) {
-                const hour = timeObject.hour();
+            function getEmojiForTime(date, timezone) {
+                const hour = TimezoneUtils.getHourInTimezone(date, timezone);
                 if (hour >= 6 && hour < 18) return "☀️"; // Daytime
                 if (hour >= 18 && hour < 21) return "🌅"; // Dusk
                 return "🌙"; // Nighttime
@@ -275,24 +318,24 @@
             });
 
             // --- Timeline Rendering ---
-            function createTimeRow(timeObject, referenceNow, columnElement) {
+            function createTimeRow(date, timezone, referenceNow, referenceTimezone) {
                 const row = document.createElement("div");
                 row.className = "time-row";
 
                 // Highlight current hour
-                if (
-                    timeObject.hour() === referenceNow.hour() &&
-                    timeObject.isSame(referenceNow, "day")
-                ) {
+                const currentHour = TimezoneUtils.getHourInTimezone(date, timezone);
+                const refHour = TimezoneUtils.getHourInTimezone(referenceNow, referenceTimezone);
+                if (currentHour === refHour && TimezoneUtils.isSameDay(date, referenceNow, timezone)) {
                     row.classList.add("current-hour");
                 }
 
-                const emoji = getEmojiForTime(timeObject);
-                const timeText = timeObject.format("h:mm A");
+                const emoji = getEmojiForTime(date, timezone);
+                const timeText = TimezoneUtils.formatTimeInTimezone(date, timezone);
 
                 let dayText = "";
-                if (timeObject.isAfter(referenceNow, "day"))
+                if (TimezoneUtils.isAfterDay(date, referenceNow, timezone)) {
                     dayText = "Tomorrow";
+                }
 
                 row.innerHTML = `
                 <span class="time-emoji">${emoji}</span>
@@ -310,21 +353,20 @@
                 columnA.innerHTML = "";
                 columnB.innerHTML = "";
 
-                const baseNow = dayjs().tz(state.tzA);
-                const nowA = dayjs().tz(state.tzA);
-                const nowB = dayjs().tz(state.tzB);
+                const now = new Date();
+                const currentHour = TimezoneUtils.getHourInTimezone(now, state.tzA);
 
                 // Generate 48 hours (24 before current hour, 24 after)
-                const currentHour = baseNow.hour();
                 const startHour = currentHour - 24;
                 const endHour = currentHour + 24;
 
                 for (let i = startHour; i <= endHour; i++) {
-                    const timeA = baseNow.hour(i).minute(0).second(0);
-                    const timeB = timeA.tz(state.tzB);
+                    // Create a date for hour i in timezone A
+                    const date = new Date(now);
+                    date.setHours(i, 0, 0, 0);
 
-                    const rowA = createTimeRow(timeA, nowA, columnA);
-                    const rowB = createTimeRow(timeB, nowB, columnB);
+                    const rowA = createTimeRow(date, state.tzA, now, state.tzA);
+                    const rowB = createTimeRow(date, state.tzB, now, state.tzB);
 
                     columnA.appendChild(rowA);
                     columnB.appendChild(rowB);
@@ -342,7 +384,7 @@
 
             // --- UI & Event Listeners ---
             function updateInputWithOffset(inputElement, timezone) {
-                const offset = dayjs().tz(timezone).format("Z");
+                const offset = TimezoneUtils.getTimezoneOffset(timezone);
                 const tzName = timezone.replace(/_/g, " ");
                 inputElement.value = `${tzName} (${offset})`;
             }

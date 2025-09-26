@@ -1,453 +1,400 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timezone Slider</title>
-    <!-- Google Fonts for a clean look -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Day.js for robust timezone handling -->
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/utc.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/timezone.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/advancedFormat.js"></script>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Timezone Slider</title>
+        <!-- Google Fonts for a clean look -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
 
-    <style>
-        /* --- Basic Setup & Theming --- */
-        :root {
-            --background-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #bb86fc;
-            --on-surface-color: #e0e0e0;
-            --on-surface-muted: #888;
-            --border-color: #333;
-            --highlight-color-rgba: 187, 134, 252, 0.1;
-        }
+        <!-- Day.js for robust timezone handling -->
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/utc.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/timezone.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/advancedFormat.js"></script>
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--on-surface-color);
-            margin: 0;
-            overscroll-behavior: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
+        <style>
+            /* --- Basic Setup & Theming --- */
+            :root {
+                --background-color: #121212;
+                --surface-color: #1e1e1e;
+                --primary-color: #bb86fc;
+                --on-surface-color: #e0e0e0;
+                --on-surface-muted: #888;
+                --border-color: #333;
+                --highlight-color-rgba: 187, 134, 252, 0.1;
+            }
 
-        /* --- App Container --- */
-        .app-container {
-            width: 100%;
-            max-width: 800px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--surface-color);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 1rem;
-        }
-        
-        @media (max-width: 600px) {
-            .app-container {
+            body {
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    Roboto,
+                    Helvetica,
+                    Arial,
+                    sans-serif;
+                background-color: var(--background-color);
+                color: var(--on-surface-color);
                 margin: 0;
-                border-radius: 0;
+                overscroll-behavior: none;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
                 height: 100vh;
             }
-        }
 
-        /* --- Header & Inputs --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-        
-        #shareButton {
-            background-color: var(--primary-color);
-            color: #121212; /* Dark text for contrast */
-            border: none;
-            padding: 0.6rem 1rem;
-            font-size: 0.9rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        #shareButton:hover {
-            background-color: #a970f7;
-        }
-        #shareButton:active {
-            transform: scale(0.96);
-        }
-
-        .input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tz-input {
-            width: 100%;
-            padding: 0.75rem;
-            font-size: 0.9rem;
-            background-color: #2c2c2c;
-            border: 1px solid var(--border-color);
-            color: var(--on-surface-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        .tz-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.3);
-        }
-
-        /* --- Canvas Container --- */
-        .canvas-container {
-            flex-grow: 1;
-            position: relative;
-            cursor: grab;
-        }
-
-        #timezoneCanvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <header>
-            <h1>Time Slider</h1>
-            <button id="shareButton">Share</button>
-        </header>
-
-        <div class="input-grid">
-            <input type="text" id="tzInputA" class="tz-input" list="timezone-list" placeholder="Select timezone...">
-            <input type="text" id="tzInputB" class="tz-input" list="timezone-list" placeholder="Select timezone...">
-        </div>
-        
-        <div class="canvas-container" id="canvasContainer">
-            <canvas id="timezoneCanvas"></canvas>
-        </div>
-    </div>
-    
-    <datalist id="timezone-list"></datalist>
-
-    <script>
-        // --- Initialize Day.js Plugins ---
-        dayjs.extend(dayjs_plugin_utc);
-        dayjs.extend(dayjs_plugin_timezone);
-        dayjs.extend(dayjs_plugin_advancedFormat);
-
-        // --- DOM Elements ---
-        const canvasContainer = document.getElementById('canvasContainer');
-        const canvas = document.getElementById('timezoneCanvas');
-        const ctx = canvas.getContext('2d');
-        const inputA = document.getElementById('tzInputA');
-        const inputB = document.getElementById('tzInputB');
-        const timezoneDatalist = document.getElementById('timezone-list');
-
-        // --- State Management ---
-        const state = {
-            tzA: dayjs.tz.guess(),
-            tzB: 'America/New_York',
-            scrollY: 0,
-            isDragging: false,
-            dragStartY: 0,
-            velocity: 0,
-            lastFrameTime: 0,
-        };
-
-        const config = {
-            rowHeight: 60,
-            friction: 0.92,
-            colors: { /* populated by CSS variables */ }
-        };
-
-        function populateColors() {
-            const style = getComputedStyle(document.documentElement);
-            config.colors = {
-                background: style.getPropertyValue('--surface-color').trim(),
-                text: style.getPropertyValue('--on-surface-color').trim(),
-                textMuted: style.getPropertyValue('--on-surface-muted').trim(),
-                primary: style.getPropertyValue('--primary-color').trim(),
-                border: style.getPropertyValue('--border-color').trim(),
-                highlight: `rgba(${style.getPropertyValue('--highlight-color-rgba').trim()})`,
-            };
-        }
-
-        // --- Timezone Data ---
-        const commonTimezones = Intl.supportedValuesOf('timeZone');
-        commonTimezones.forEach(tz => {
-            const option = document.createElement('option');
-            option.value = tz;
-            timezoneDatalist.appendChild(option);
-        });
-
-        // --- Canvas Drawing Logic ---
-        function getScrollBounds() {
-            const dpr = window.devicePixelRatio || 1;
-            const logicalHeight = canvas.height / dpr;
-            const contentHeight = 24 * config.rowHeight;
-
-            if (contentHeight <= logicalHeight) {
-                return { min: 0, max: 0 };
+            /* --- App Container --- */
+            .app-container {
+                width: 100%;
+                max-width: 800px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                background-color: var(--surface-color);
+                border-radius: 12px;
+                overflow: hidden;
+                margin: 1rem;
             }
 
-            return {
-                min: logicalHeight - contentHeight,
-                max: 0,
-            };
-        }
-
-        function setupCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvasContainer.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            // Center the initial view on the current hour
-            state.scrollY = (canvas.height / dpr / 2) - (dayjs().hour() * config.rowHeight) - (config.rowHeight / 2);
-        }
-
-        function getEmojiForTime(timeObject) {
-            const hour = timeObject.hour();
-            if (hour >= 6 && hour < 18) return '☀️'; // Daytime
-            if (hour >= 18 && hour < 21) return '🌅'; // Dusk
-            return '🌙'; // Nighttime
-        }
-
-        function drawCell(x, y, width, timeObject, referenceNow) {
-            // Highlight current hour
-            if (timeObject.hour() === referenceNow.hour() && timeObject.isSame(referenceNow, 'day')) {
-                ctx.fillStyle = config.colors.highlight;
-                ctx.fillRect(x, y, width, config.rowHeight);
-            }
-
-            // Draw emoji
-            const emoji = getEmojiForTime(timeObject);
-            ctx.font = '24px Inter';
-            ctx.textAlign = 'center';
-            ctx.fillText(emoji, x + 30, y + config.rowHeight / 2 + 8);
-
-
-            // Draw time text
-            ctx.fillStyle = config.colors.text;
-            ctx.font = '500 16px Inter';
-            ctx.textAlign = 'center';
-            ctx.fillText(timeObject.format('h:mm A'), x + width / 2 + 10, y + config.rowHeight / 2 + 6);
-            
-            // Day indicator
-            let dayText = '';
-            if (timeObject.isAfter(referenceNow, 'day')) dayText = 'Tomorrow';
-
-            if (dayText) {
-                ctx.fillStyle = config.colors.textMuted;
-                ctx.font = '400 12px Inter';
-                ctx.fillText(dayText, x + width / 2 + 10, y + config.rowHeight / 2 + 22);
-            }
-        }
-        
-        function draw() {
-            const dpr = window.devicePixelRatio || 1;
-            const logicalWidth = canvas.width / dpr;
-            const logicalHeight = canvas.height / dpr;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = config.colors.background;
-            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
-            
-            const colWidth = logicalWidth / 2;
-            
-            const baseNowForGrid = dayjs().tz(state.tzA);
-            const nowA = dayjs().tz(state.tzA);
-            const nowB = dayjs().tz(state.tzB);
-
-            const startHour = Math.floor(-state.scrollY / config.rowHeight) - 2;
-            const endHour = startHour + Math.ceil(logicalHeight / config.rowHeight) + 4;
-
-            for (let i = startHour; i < endHour; i++) {
-                const y = state.scrollY + i * config.rowHeight;
-                if (y > logicalHeight + config.rowHeight || y < -config.rowHeight) continue;
-
-                const timeA = baseNowForGrid.hour(i).minute(0).second(0);
-                const timeB = timeA.tz(state.tzB);
-
-                drawCell(0, y, colWidth, timeA, nowA);
-                drawCell(colWidth, y, colWidth, timeB, nowB);
-                
-                ctx.strokeStyle = config.colors.border;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(0, y + config.rowHeight - 0.5);
-                ctx.lineTo(logicalWidth, y + config.rowHeight - 0.5);
-                ctx.stroke();
-            }
-            
-            ctx.strokeStyle = config.colors.border;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(colWidth - 0.5, 0);
-            ctx.lineTo(colWidth - 0.5, logicalHeight);
-            ctx.stroke();
-        }
-
-        // --- Animation & Physics Loop ---
-        function animationLoop(currentTime) {
-            if (!state.lastFrameTime) state.lastFrameTime = currentTime;
-            const deltaTime = currentTime - state.lastFrameTime;
-
-            if (!state.isDragging && Math.abs(state.velocity) > 0.01) {
-                state.scrollY += state.velocity * (deltaTime / 16.67);
-                state.velocity *= config.friction;
-            } else if (!state.isDragging) {
-                state.velocity = 0;
-            }
-            
-            const bounds = getScrollBounds();
-            const currentScrollY = state.scrollY;
-            state.scrollY = Math.max(bounds.min, Math.min(bounds.max, state.scrollY));
-            
-            if (currentScrollY !== state.scrollY) {
-                state.velocity = 0;
-            }
-            
-            draw();
-            state.lastFrameTime = currentTime;
-            requestAnimationFrame(animationLoop);
-        }
-
-        // --- UI & Event Listeners ---
-        function updateInputWithOffset(inputElement, timezone) {
-            const offset = dayjs().tz(timezone).format('Z');
-            const tzName = timezone.replace(/_/g, ' ');
-            inputElement.value = `${tzName} (${offset})`;
-        }
-
-        function handleInput(e, tzKey) {
-            const newTz = e.target.value;
-            if (commonTimezones.includes(newTz)) {
-                state[tzKey] = newTz;
-                updateInputWithOffset(e.target, newTz);
-            } else {
-                 updateInputWithOffset(e.target, state[tzKey]);
-            }
-        }
-
-        function addShareButtonListener() {
-            const shareButton = document.getElementById('shareButton');
-            shareButton.addEventListener('click', () => {
-                const url = new URL(window.location);
-                url.searchParams.set('tzA', state.tzA);
-                url.searchParams.set('tzB', state.tzB);
-
-                const tempInput = document.createElement('input');
-                tempInput.value = url.href;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                try {
-                    document.execCommand('copy');
-                    shareButton.textContent = 'Copied!';
-                } catch (err) {
-                    shareButton.textContent = 'Error!';
-                    console.error('Failed to copy URL: ', err);
+            @media (max-width: 600px) {
+                .app-container {
+                    margin: 0;
+                    border-radius: 0;
+                    height: 100vh;
                 }
-                document.body.removeChild(tempInput);
+            }
 
-                setTimeout(() => {
-                    shareButton.textContent = 'Share';
-                }, 2000);
+            /* --- Header & Inputs --- */
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: var(--primary-color);
+            }
+
+            #shareButton {
+                background-color: var(--primary-color);
+                color: #121212; /* Dark text for contrast */
+                border: none;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+                border-radius: 8px;
+                font-weight: 500;
+                cursor: pointer;
+                transition:
+                    background-color 0.2s,
+                    transform 0.1s;
+            }
+            #shareButton:hover {
+                background-color: #a970f7;
+            }
+            #shareButton:active {
+                transform: scale(0.96);
+            }
+
+            .input-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .tz-input {
+                width: 100%;
+                padding: 0.75rem;
+                font-size: 0.9rem;
+                background-color: #2c2c2c;
+                border: 1px solid var(--border-color);
+                color: var(--on-surface-color);
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+            .tz-input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.3);
+            }
+
+            /* --- Timeline Container --- */
+            .timeline-container {
+                flex-grow: 1;
+                position: relative;
+                overflow-y: auto;
+                scroll-behavior: smooth;
+            }
+
+            .timeline-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                min-height: 100%;
+            }
+
+            .timezone-column {
+                border-right: 1px solid var(--border-color);
+            }
+
+            .timezone-column:last-child {
+                border-right: none;
+            }
+
+            .time-row {
+                height: 60px;
+                display: flex;
+                align-items: center;
+                padding: 0 1rem;
+                border-bottom: 1px solid var(--border-color);
+                position: relative;
+            }
+
+            .time-row.current-hour {
+                background-color: rgba(var(--highlight-color-rgba));
+            }
+
+            .time-emoji {
+                font-size: 24px;
+                margin-right: 1rem;
+            }
+
+            .time-info {
+                flex-grow: 1;
+            }
+
+            .time-main {
+                font-size: 16px;
+                font-weight: 500;
+                color: var(--on-surface-color);
+            }
+
+            .time-day {
+                font-size: 12px;
+                color: var(--on-surface-muted);
+                margin-top: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app-container">
+            <header>
+                <h1>Time Slider</h1>
+                <button id="shareButton">Share</button>
+            </header>
+
+            <div class="input-grid">
+                <input
+                    type="text"
+                    id="tzInputA"
+                    class="tz-input"
+                    list="timezone-list"
+                    placeholder="Select timezone..."
+                />
+                <input
+                    type="text"
+                    id="tzInputB"
+                    class="tz-input"
+                    list="timezone-list"
+                    placeholder="Select timezone..."
+                />
+            </div>
+
+            <div class="timeline-container" id="timelineContainer">
+                <div class="timeline-grid" id="timelineGrid">
+                    <div class="timezone-column" id="columnA"></div>
+                    <div class="timezone-column" id="columnB"></div>
+                </div>
+            </div>
+        </div>
+
+        <datalist id="timezone-list"></datalist>
+
+        <script>
+            // --- Initialize Day.js Plugins ---
+            dayjs.extend(dayjs_plugin_utc);
+            dayjs.extend(dayjs_plugin_timezone);
+            dayjs.extend(dayjs_plugin_advancedFormat);
+
+            // --- DOM Elements ---
+            const timelineContainer =
+                document.getElementById("timelineContainer");
+            const timelineGrid = document.getElementById("timelineGrid");
+            const columnA = document.getElementById("columnA");
+            const columnB = document.getElementById("columnB");
+            const inputA = document.getElementById("tzInputA");
+            const inputB = document.getElementById("tzInputB");
+            const timezoneDatalist = document.getElementById("timezone-list");
+
+            // --- State Management ---
+            const state = {
+                tzA: dayjs.tz.guess(),
+                tzB: "America/New_York",
+            };
+
+            function getEmojiForTime(timeObject) {
+                const hour = timeObject.hour();
+                if (hour >= 6 && hour < 18) return "☀️"; // Daytime
+                if (hour >= 18 && hour < 21) return "🌅"; // Dusk
+                return "🌙"; // Nighttime
+            }
+
+            // --- Timezone Data ---
+            const commonTimezones = Intl.supportedValuesOf("timeZone");
+            commonTimezones.forEach((tz) => {
+                const option = document.createElement("option");
+                option.value = tz;
+                timezoneDatalist.appendChild(option);
             });
-        }
-        
-        inputA.addEventListener('change', (e) => handleInput(e, 'tzA'));
-        inputB.addEventListener('change', (e) => handleInput(e, 'tzB'));
-        
-        let lastY = 0;
-        function onPointerDown(y) {
-            state.isDragging = true;
-            state.dragStartY = y;
-            lastY = y;
-            state.velocity = 0;
-            canvasContainer.style.cursor = 'grabbing';
-        }
 
-        function onPointerMove(y) {
-            if (state.isDragging) {
-                const dy = y - lastY;
-                state.scrollY += dy;
-                state.velocity = dy;
-                lastY = y;
+            // --- Timeline Rendering ---
+            function createTimeRow(timeObject, referenceNow, columnElement) {
+                const row = document.createElement("div");
+                row.className = "time-row";
+
+                // Highlight current hour
+                if (
+                    timeObject.hour() === referenceNow.hour() &&
+                    timeObject.isSame(referenceNow, "day")
+                ) {
+                    row.classList.add("current-hour");
+                }
+
+                const emoji = getEmojiForTime(timeObject);
+                const timeText = timeObject.format("h:mm A");
+
+                let dayText = "";
+                if (timeObject.isAfter(referenceNow, "day"))
+                    dayText = "Tomorrow";
+
+                row.innerHTML = `
+                <span class="time-emoji">${emoji}</span>
+                <div class="time-info">
+                    <div class="time-main">${timeText}</div>
+                    ${dayText ? `<div class="time-day">${dayText}</div>` : ""}
+                </div>
+            `;
+
+                return row;
             }
-        }
 
-        function onPointerUp() {
-            state.isDragging = false;
-            canvasContainer.style.cursor = 'grab';
-        }
+            function renderTimeline() {
+                // Clear existing content
+                columnA.innerHTML = "";
+                columnB.innerHTML = "";
 
-        canvasContainer.addEventListener('mousedown', (e) => onPointerDown(e.clientY));
-        window.addEventListener('mousemove', (e) => onPointerMove(e.clientY));
-        window.addEventListener('mouseup', onPointerUp);
-        
-        canvasContainer.addEventListener('touchstart', (e) => onPointerDown(e.touches[0].clientY), { passive: true });
-        window.addEventListener('touchmove', (e) => { if(state.isDragging) onPointerMove(e.touches[0].clientY) }, { passive: true });
-        window.addEventListener('touchend', onPointerUp);
+                const baseNow = dayjs().tz(state.tzA);
+                const nowA = dayjs().tz(state.tzA);
+                const nowB = dayjs().tz(state.tzB);
 
-        canvasContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            state.scrollY -= e.deltaY;
-            state.velocity = -e.deltaY * 0.1;
-        }, { passive: false });
+                // Generate 48 hours (24 before current hour, 24 after)
+                const currentHour = baseNow.hour();
+                const startHour = currentHour - 24;
+                const endHour = currentHour + 24;
 
-        window.addEventListener('resize', () => {
-            setupCanvas();
-            draw();
-        });
+                for (let i = startHour; i <= endHour; i++) {
+                    const timeA = baseNow.hour(i).minute(0).second(0);
+                    const timeB = timeA.tz(state.tzB);
 
-        // --- Initialization ---
-        function init() {
-            // Parse URL parameters on load
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlTzA = urlParams.get('tzA');
-            const urlTzB = urlParams.get('tzB');
+                    const rowA = createTimeRow(timeA, nowA, columnA);
+                    const rowB = createTimeRow(timeB, nowB, columnB);
 
-            if (urlTzA && commonTimezones.includes(urlTzA)) {
-                state.tzA = urlTzA;
+                    columnA.appendChild(rowA);
+                    columnB.appendChild(rowB);
+                }
+
+                // Scroll to current hour (center it)
+                setTimeout(() => {
+                    const currentRowIndex = 24; // Current hour is at index 24
+                    const targetRow = columnA.children[currentRowIndex];
+                    if (targetRow) {
+                        targetRow.scrollIntoView({ block: "center" });
+                    }
+                }, 100);
             }
-            if (urlTzB && commonTimezones.includes(urlTzB)) {
-                state.tzB = urlTzB;
-            }
-            
-            populateColors();
-            updateInputWithOffset(inputA, state.tzA);
-            updateInputWithOffset(inputB, state.tzB);
-            setupCanvas();
-            addShareButtonListener();
-            requestAnimationFrame(animationLoop);
-        }
 
-        init();
-    </script>
-</body>
+            // --- UI & Event Listeners ---
+            function updateInputWithOffset(inputElement, timezone) {
+                const offset = dayjs().tz(timezone).format("Z");
+                const tzName = timezone.replace(/_/g, " ");
+                inputElement.value = `${tzName} (${offset})`;
+            }
+
+            function handleInput(e, tzKey) {
+                const newTz = e.target.value;
+                if (commonTimezones.includes(newTz)) {
+                    state[tzKey] = newTz;
+                    updateInputWithOffset(e.target, newTz);
+                    renderTimeline(); // Re-render timeline with new timezone
+                } else {
+                    updateInputWithOffset(e.target, state[tzKey]);
+                }
+            }
+
+            function addShareButtonListener() {
+                const shareButton = document.getElementById("shareButton");
+                shareButton.addEventListener("click", () => {
+                    const url = new URL(window.location);
+                    url.searchParams.set("tzA", state.tzA);
+                    url.searchParams.set("tzB", state.tzB);
+
+                    const tempInput = document.createElement("input");
+                    tempInput.value = url.href;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    try {
+                        document.execCommand("copy");
+                        shareButton.textContent = "Copied!";
+                    } catch (err) {
+                        shareButton.textContent = "Error!";
+                        console.error("Failed to copy URL: ", err);
+                    }
+                    document.body.removeChild(tempInput);
+
+                    setTimeout(() => {
+                        shareButton.textContent = "Share";
+                    }, 2000);
+                });
+            }
+
+            inputA.addEventListener("change", (e) => handleInput(e, "tzA"));
+            inputB.addEventListener("change", (e) => handleInput(e, "tzB"));
+
+            // No custom scroll handling needed - browser handles it natively!
+
+            // --- Initialization ---
+            function init() {
+                // Parse URL parameters on load
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlTzA = urlParams.get("tzA");
+                const urlTzB = urlParams.get("tzB");
+
+                if (urlTzA && commonTimezones.includes(urlTzA)) {
+                    state.tzA = urlTzA;
+                }
+                if (urlTzB && commonTimezones.includes(urlTzB)) {
+                    state.tzB = urlTzB;
+                }
+
+                updateInputWithOffset(inputA, state.tzA);
+                updateInputWithOffset(inputB, state.tzB);
+                addShareButtonListener();
+                renderTimeline(); // Render the timeline instead of canvas
+            }
+
+            init();
+        </script>
+    </body>
 </html>
-
